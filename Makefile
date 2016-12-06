@@ -1,19 +1,20 @@
-CC = mpicc
-EXE = exe/fftw_example
-OPT = 
+CC = mpicxx
+FFT = fftw
+EXE = exe/c2c_$(FFT)
+OBJ = c2c_$(FFT).o
+LIB = -L/u/cgkim/.local/lib -laccfft -lfftw3_mpi -lfftw3_omp -lfftw3 -lmpi
+OPT = -O3 -fopenmp
 INC = -I/u/cgkim/.local/include
-LIB = -L/u/cgkim/.local/lib -lfftw3_mpi -lfftw3 -lmpi
 #INC = 
 #LIB = -lfftw3 -lfftw3_mpi -lmpi
-OBJ = fftw_example.o
 
 #-------------------  macro definitions  ---------------------------------------
 
-SRC = $(OBJ:.o=.c)
+SRC = $(OBJ:.o=.cpp)
 
 #--------------------  implicit rules  -----------------------------------------
 
-.c.o:
+.cpp.o:
 	${CC} ${INC} -c $<
 
 #---------------------  targets  -----------------------------------------------
