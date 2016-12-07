@@ -17,7 +17,7 @@ int main(int argc, char **argv)
 
   /* Set size of FFT and process mesh */
   n[0] = 128; n[1] = 128; n[2] = 128;
-  np[0] = 4; np[1] = 2; np[2] = 1;
+  np[0] = 2; np[1] = 2; np[2] = 2;
  
   /* Initialize MPI and PFFT */
   MPI_Init(&argc, &argv);
