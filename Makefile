@@ -1,10 +1,16 @@
 CC= mpicxx
 FFT = fftw
+MACHINE = tigress
 EXE = exe/c2c_$(FFT)
-
 OBJ = c2c_$(FFT).o
-INC = -I/u/cgkim/.local/include
-LIB_PATH = -L/u/cgkim/.local/lib
+ifeq ($(MACHINE),local)
+  FFT_PATH =/u/cgkim/.local/
+else ifeq ($(MACHINE),tigress)
+  FFT_PATH =/tigress/changgoo/local
+endif
+INC = -I$(FFT_PATH)/include
+LIB_PATH = -L$(FFT_PATH)/lib
+
 ifeq ($(FFT),accfft)
   LIB_FFT = -laccfft
 else ifeq ($(FFT),pfft)
@@ -18,8 +24,8 @@ else ifeq ($(FFT),fftp)
             fft_plimpton/pack_3d.o \
             fft_plimpton/remap_2d.o \
             fft_plimpton/remap_3d.o 
+  INC += -I$(FFT_PATH)/fft_plimpton
   OBJ += $(FFT_OBJ)
-  INC += -I/scr1/cgkim/Research/FFT/fft_plimpton
   LIB_FFT = 
   CC=mpicc
 else
