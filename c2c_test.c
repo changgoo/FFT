@@ -2,37 +2,12 @@
 #include <stdlib.h>
 #include <math.h> // M_PI
 #include <mpi.h>
-
-//#define FFT_PLIMPTON
-//#define PFFT
-#define FFTW
-
-#if defined (FFT_PLIMPTON)
-#include <fft_3d.h>
-#define Complex fftw_complex
-#define fft_int int
-static struct fft_plan_3d *plan=NULL;
-#elif defined (PFFT)
-#include <pfft.h>
-#define Complex pfft_complex
-#define fft_int ptrdiff_t
-static pfft_plan fplan=NULL, bplan=NULL;
-MPI_Comm comm_cart_3d;
-#elif defined (FFTW)
-#include <fftw3-mpi.h>
-#define Complex fftw_complex
-#define fft_int ptrdiff_t
-static fftw_plan fplan=NULL, bplan=NULL;
-#endif
-
-#define F3DI(i, j, k, nx1, nx2, nx3) ((k) + (nx3)*((j) + (nx2)*(i)))
-#define F2DI(i, j, nx1, nx2) ((j) + (nx2)*(i))
-
+#include "defs.h"
 
 static int nprocs, procid;
 static int np[3];
 
-void decompose(fft_int* Nx, fft_int* Nb, fft_int* is);
+void decompose(fft_int* Nx, fft_int* Nb, fft_int* is, int nthreads);
 Complex *data_alloc(fft_int alloc_local);
 void fft_plan(Complex *data, fft_int* Nx, fft_int* Nb, fft_int* is, double *fft_time, int nthreads);
 void do_fft(Complex *data, double *fft_time, int nthreads);
@@ -84,7 +59,7 @@ int main(int argc, char **argv) {
   int nthreads = 1;
   int Ntry=10,itry;
 
-  decompose(Nx, Nb, is);
+  decompose(Nx, Nb, is, nthreads);
 
   /* Allocate memory */
   fft_int alloc_local = Nb[0]*Nb[1]*Nb[2];
@@ -105,8 +80,9 @@ int main(int argc, char **argv) {
   return 0;
 } // end main
 
-void decompose(fft_int* Nx, fft_int* Nb, fft_int* is){
+void decompose(fft_int* Nx, fft_int* Nb, fft_int* is, int nthreads){
   int ip,jp,kp;
+#ifndef OPENFFT
   np[0] = Nx[0]/Nb[0];
   np[1] = Nx[1]/Nb[1];
   np[2] = Nx[2]/Nb[2];
@@ -123,6 +99,7 @@ void decompose(fft_int* Nx, fft_int* Nb, fft_int* is){
   is[2] = kp*Nb[2];
   is[1] = jp*Nb[1];
   is[0] = ip*Nb[0];
+#endif
 
 #if defined (PFFT)
   pfft_init();
@@ -139,7 +116,7 @@ void decompose(fft_int* Nx, fft_int* Nb, fft_int* is){
   if( is[0] != iis[0] || is[1] != iis[1] || is[2] != iis[2] ){
     printf("Decomposition is inconsistent\n");
     printf("My decomposition %d %d %d\n",is[0],is[1],is[2]);
-    printf("PFFT decomposition %d %d %d\n",iis[0],ii1[1],iis[2]);
+    printf("PFFT decomposition %d %d %d\n",iis[0],iis[1],iis[2]);
     exit(1);
   }
 #elif defined (FFTW)
@@ -148,6 +125,49 @@ void decompose(fft_int* Nx, fft_int* Nb, fft_int* is){
     printf("FFTW only support SLAB decomposition\n");
     exit(1);
   }
+#elif defined (ACCFFT)
+  fft_int c_dims[2] = { np[0], np[1] };
+  fft_int alloc_local,Ni[3],No[3],iis[3],ios[3];
+  accfft_create_comm(MPI_COMM_WORLD, c_dims, &c_comm);
+  alloc_local = accfft_local_size_dft_c2c(Nx, Ni, iis, No, ios, c_comm);
+  if( is[0] != iis[0] || is[1] != iis[1] || is[2] != iis[2] ){
+    printf("Decomposition is inconsistent\n");
+    printf("My decomposition %d %d %d\n",is[0],is[1],is[2]);
+    printf("ACCFFT decomposition %d %d %d\n",iis[0],iis[1],iis[2]);
+    exit(1);
+  }
+  accfft_init(nthreads);
+#elif defined (OPENFFT)
+  int offt_measure,measure_time,print_memory;
+  int My_Max_NumGrid,My_NumGrid_In,My_NumGrid_Out;
+  int My_Index_In[6],My_Index_Out[6];
+
+  offt_measure = 0;
+  measure_time = 0;
+  print_memory = 0;
+
+  /* Initialize OpenFFT */ 
+
+  openfft_init_c2c_3d(Nx[0],Nx[1],Nx[2],
+		     &My_Max_NumGrid,&My_NumGrid_In,My_Index_In,
+		     &My_NumGrid_Out,My_Index_Out,
+		     offt_measure,measure_time,print_memory);
+/*
+  printf("[OPENFFT %d] My_NumGrid %3d %3d %3d\n", procid, My_Max_NumGrid, My_NumGrid_In,My_NumGrid_Out);
+  printf("[OPENFFT %d] My_Index_In %3d %3d %3d %3d %3d %3d\n", procid, My_Index_In[0], My_Index_In[1], My_Index_In[2], My_Index_In[3], My_Index_In[4], My_Index_In[5]);
+  printf("[OPENFFT %d] My_Index_Out %3d %3d %3d %3d %3d %3d\n", procid, My_Index_Out[0], My_Index_Out[1], My_Index_Out[2], My_Index_Out[3], My_Index_Out[4], My_Index_Out[5]);
+*/
+
+  is[0]=My_Index_In[0];
+  is[1]=My_Index_In[1];
+  is[2]=My_Index_In[2];
+  Nb[0]=My_Index_In[3]-My_Index_In[0]+1;
+  Nb[1]=My_Index_In[4]-My_Index_In[1]+1;
+  Nb[2]=My_Index_In[5]-My_Index_In[2]+1;
+
+  np[0] = Nx[0]/Nb[0];
+  np[1] = Nx[1]/Nb[1];
+  np[2] = Nx[2]/Nb[2];
 #endif
 
   printf("[mpi rank %d] block size  %3d %3d %3d\n", procid,
@@ -190,6 +210,8 @@ void fft_plan(Complex *data, fft_int* Nx, fft_int* Nb, fft_int* is, double *fft_
     PFFT_FORWARD, PFFT_TRANSPOSED_NONE| PFFT_MEASURE| PFFT_DESTROY_INPUT);
   bplan = pfft_plan_dft_3d(Nx, data, data, comm_cart_3d,
     PFFT_BACKWARD, PFFT_TRANSPOSED_NONE| PFFT_MEASURE| PFFT_DESTROY_INPUT);
+#elif defined (ACCFFT)
+  plan = accfft_plan_dft_3d_c2c(Nx,data,data,c_comm,ACCFFT_MEASURE);
 #endif
   fft_time[0] += MPI_Wtime();
 
@@ -207,6 +229,10 @@ void do_fft(Complex *data, double *fft_time, int nthreads){
   fftw_execute(fplan);
 #elif defined (FFT_PLIMPTON)
   fft_3d(data, data, FFTW_FORWARD, plan);
+#elif defined (ACCFFT)
+  accfft_execute_c2c(plan,ACCFFT_FORWARD,data,data);
+#elif defined (OPENFFT)
+  openfft_exec_c2c_3d(data, data);
 #endif
   f_time += MPI_Wtime();
 //  MPI_Barrier(MPI_COMM_WORLD);
@@ -219,6 +245,10 @@ void do_fft(Complex *data, double *fft_time, int nthreads){
   fftw_execute(bplan);
 #elif defined (FFT_PLIMPTON)
   fft_3d(data, data, FFTW_BACKWARD, plan);
+#elif defined (ACCFFT)
+  accfft_execute_c2c(plan,ACCFFT_BACKWARD,data,data);
+#elif defined (OPENFFT)
+  openfft_exec_c2c_3d(data, data);
 #endif
   i_time+=MPI_Wtime();
 //  MPI_Barrier(MPI_COMM_WORLD);
@@ -242,6 +272,11 @@ void fft_destroy(Complex *data){
 #elif defined (FFT_PLIMPTON)
   fftw_free(data);
   fft_3d_destroy_plan(plan);
+#elif defined (ACCFFT)
+  accfft_free(data);
+  accfft_destroy_plan(plan);
+  accfft_cleanup();
+  MPI_Comm_free(&c_comm);
 #endif
   return;
 }
@@ -277,8 +312,13 @@ void initialize(Complex*a, fft_int* Nx, fft_int* Nb, fft_int* is){
         Y = 2 * pi / Nx[1] * (j + is[1]);
         Z = 2 * pi / Nx[2] * (k + is[2]);
         ptr = F3DI(i,j,k,Nb[0],Nb[1],Nb[2]);
+#ifdef OPENFFT
+        a[ptr].r = testcase(X, Y, Z); // Real Component
+        a[ptr].i = testcase(X, Y, Z); // Imag Component
+#else
         a[ptr][0] = testcase(X, Y, Z); // Real Component
         a[ptr][1] = testcase(X, Y, Z); // Imag Component
+#endif
       }
     }
   }
@@ -300,9 +340,17 @@ void check_err(Complex*a, fft_int* Nx, fft_int* Nb, fft_int* is){
         Y = 2 * pi / Nx[1] * (j + is[1]);
         Z = 2 * pi / Nx[2] * (k + is[2]);
         ptr = F3DI(i,j,k,Nb[0],Nb[1],Nb[2]);
+#ifdef OPENFFT
+        numerical_r = a[ptr].r / size;
+#else
         numerical_r = a[ptr][0] / size;
+#endif
 	if (numerical_r != numerical_r) numerical_r = 0;
+#ifdef OPENFFT
+        numerical_r = a[ptr].r / size;
+#else
         numerical_c = a[ptr][1] / size;
+#endif
 	if (numerical_c != numerical_c) numerical_r = 0;
         err += fabs(numerical_r - testcase(X, Y, Z))
              + fabs(numerical_c - testcase(X, Y, Z));
