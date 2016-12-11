@@ -3,6 +3,8 @@ FFT = fftw
 MACHINE = tigress
 EXE = exe/c2c_$(FFT)
 OBJ = c2c_$(FFT).o
+EXE = exe/c2c_test
+OBJ = c2c_test.o
 ifeq ($(MACHINE),local)
   FFT_PATH =/u/cgkim/.local/
 else ifeq ($(MACHINE),tigress)
@@ -17,17 +19,10 @@ else ifeq ($(FFT),pfft)
   LIB_FFT = -lpfft
   CC = mpicc -std=c99
 else ifeq ($(FFT),fftp)
-  FFT_OBJ = fft_plimpton/factor.o \
-            fft_plimpton/fft_2d.o \
-            fft_plimpton/fft_3d.o \
-            fft_plimpton/pack_2d.o \
-            fft_plimpton/pack_3d.o \
-            fft_plimpton/remap_2d.o \
-            fft_plimpton/remap_3d.o 
-  INC += -I$(FFT_PATH)/fft_plimpton
+  INC += -I./fft_plimpton
   OBJ += $(FFT_OBJ)
-  LIB_FFT = 
-  CC=mpicc
+  LIB_FFT = -L./fft_plimpton -lfftp
+  CC =mpicc
 else
   LIB_FFT = 
 endif
@@ -60,9 +55,6 @@ all:    compile
 compile: ${EXE}
 
 ${EXE}: ${OBJ}
-ifeq ($(FFT),fftp)
-	(cd fft_plimpton; $(MAKE) compile; cd ..)
-endif
 	${CC} $(OPT) -o ${EXE} ${OBJ} ${LIB}
 
 help:
@@ -73,7 +65,4 @@ help:
 
 .PHONY: clean
 clean:
-ifeq ($(FFT),fftp)
-	(cd fft_plimpton; $(MAKE) clean; cd ..)
-endif
 	rm -f *.o

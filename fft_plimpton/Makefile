@@ -17,24 +17,29 @@ CORE_OBJ = factor.o \
 
 CC = mpicc
 OBJ = $(CORE_OBJ)
-INC = -I/u/cgkim/.local/include
+INC = 
 
 #-------------------  macro definitions  ---------------------------------------
 
 SRC = $(OBJ:.o=.c)
 
-#--------------------  implicit rules  -----------------------------------------
-
-.c.o:
-	${CC} ${INC} -c $<
 
 #---------------------  targets  -----------------------------------------------
 
-all:	compile
+FFTPLIB = ./libfftp.a
 
-.PHONY: compile
-compile: ${OBJ}
-#	ar rcs libplimpton.a ${OBJ}
+
+all: lib 
+
+lib: libfftp.a
+
+libfftp.a:  $(OFFTLIB)
+
+%.o: %.c
+	${CC} ${INC} -c $<
+
+$(FFTPLIB): $(OBJ)
+	ar rcs $(FFTPLIB) $(OBJ)
 
 help:
 	@echo This is the FFT Makefile
@@ -44,4 +49,4 @@ help:
 
 .PHONY: clean
 clean:
-	rm -f *.o 
+	rm -f *.o *.a
