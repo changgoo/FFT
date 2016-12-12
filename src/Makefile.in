@@ -19,8 +19,8 @@ else ifeq ($(MACHINE),pleiades)
   LIB_FFTW = -mkl -lmpi
   CC = icc
 else
-  FFTW_INC =/tigress/changgoo/local
-  FFTW_LIB =/tigress/changgoo/lib
+  FFTW_INC =/tigress/changgoo/local/include
+  FFTW_LIB =/tigress/changgoo/local/lib
 endif
 INC = -I$(FFTW_INC)
 
@@ -37,7 +37,7 @@ else ifeq ($(FFT),fftp)
 else
   LIB_FFT = 
 endif
-LIB = $(FFTW_LIB) $(LIB_FFT) $(LIB_FFTW)
+LIB = -L$(FFTW_LIB) $(LIB_FFT) $(LIB_FFTW)
 OPT = -O3 -fopenmp
 
 #-------------------  macro definitions  ---------------------------------------

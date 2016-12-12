@@ -3,3 +3,4 @@ defs.in
 *.out
 *.err
 *.a
+*.timing

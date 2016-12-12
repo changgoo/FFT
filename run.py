@@ -49,7 +49,7 @@ elif args['server']=='tiger':
   nproc_node = 16
   Nx_set=([64,64,64],[128,64,64],[256,64,64])
 
-Nb=np.array([32,32,32])
+Nb=np.array([64,64,64])
 Nbunit=Nb.prod()
 for Nx0 in Nx_set:
   for i in range(6):
@@ -75,7 +75,7 @@ for Nx0 in Nx_set:
  
     nproc=Np.prod()
     nnode=(nproc-1)/nproc_node + 1
-    if nproc > 10000: break
+    if nproc > 5000: break
     print args['fft'],2**i,Nx,Nb,Np,nproc,nnode
  
     slurm={}
