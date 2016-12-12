@@ -26,6 +26,7 @@ INC = -I$(FFTW_INC)
 
 ifeq ($(FFT),accfft)
   LIB_FFT = -laccfft
+  CC=mpicxx
 else ifeq ($(FFT),openfft)
   LIB_FFT = -lopenfft
 else ifeq ($(FFT),pfft)

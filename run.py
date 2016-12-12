@@ -44,10 +44,11 @@ os.chdir('../exe')
 
 if args['server']=='perseus' or args['server']=='pleiades': 
   nproc_node = 28
-  Nx_set=([224,64,64],[224,128,64],[224,128,128])
+  #Nx_set=([224,64,64],[224,128,64],[224,128,128])
+  Nx_set=([64,64,64],[128,64,64],[128,128,64])
 elif args['server']=='tiger':
   nproc_node = 16
-  Nx_set=([64,64,64],[128,64,64],[256,64,64])
+  Nx_set=([64,64,64],[128,64,64],[128,128,64])
 
 Nb=np.array([64,64,64])
 Nbunit=Nb.prod()
@@ -76,33 +77,33 @@ for Nx0 in Nx_set:
     nproc=Np.prod()
     nnode=(nproc-1)/nproc_node + 1
     if nproc > 5000: break
-    print args['fft'],2**i,Nx,Nb,Np,nproc,nnode
+    if nproc != 0: 
+      print args['fft'],2**i,Nx,Nb,Np,nproc,nnode
+      slurm={}
+      slurm['NNODE']='%d' % nnode
+      slurm['NCPUS']='%d' % nproc_node
+      slurm['NPROC']='%d' % nproc
+      slurm['Nx1']='%d' % Nx[0]
+      slurm['Nx2']='%d' % Nx[1]
+      slurm['Nx3']='%d' % Nx[2]
+      slurm['Nb1']='%d' % Nb[0]
+      slurm['Nb2']='%d' % Nb[1]
+      slurm['Nb3']='%d' % Nb[2]
+      slurm['FFT_SOLVER']=args['fft']
+      slurm['DECOMP']=args['decomp']
+  
+      slurm_input='fft_test_%s' % args['server']
+      slurm_output='%s-%s-%d' % (slurm['FFT_SOLVER'],args['decomp'],nproc)
  
-    slurm={}
-    slurm['NNODE']='%d' % nnode
-    slurm['NCPUS']='%d' % nproc_node
-    slurm['NPROC']='%d' % nproc
-    slurm['Nx1']='%d' % Nx[0]
-    slurm['Nx2']='%d' % Nx[1]
-    slurm['Nx3']='%d' % Nx[2]
-    slurm['Nb1']='%d' % Nb[0]
-    slurm['Nb2']='%d' % Nb[1]
-    slurm['Nb3']='%d' % Nb[2]
-    slurm['FFT_SOLVER']=args['fft']
-    slurm['DECOMP']=args['decomp']
- 
-    slurm_input='fft_test_%s' % args['server']
-    slurm_output='%s-%s-%d' % (slurm['FFT_SOLVER'],args['decomp'],nproc)
-
-    outname='%s-%s-%d-%dx%dx%d.timing' % (slurm['FFT_SOLVER'],args['decomp'],nproc,Nb[0],Nb[1],Nb[2])
-    slurm['OUTNAME']=outname
-    with open(slurm_input, 'r') as current_file:
-      slurm_template = current_file.read()
- 
-    for key,val in slurm.items():
-      slurm_template = re.sub(r'@{0}@'.format(key), val, slurm_template)
- 
-    with open(slurm_output, 'w') as current_file:
-      current_file.write(slurm_template)
- 
-    if args['run']: return_code = subprocess.call("sbatch %s" % slurm_output, shell=True)  
+      outname='%s-%s-%d-%dx%dx%d.timing' % (slurm['FFT_SOLVER'],args['decomp'],nproc,Nb[0],Nb[1],Nb[2])
+      slurm['OUTNAME']=outname
+      with open(slurm_input, 'r') as current_file:
+        slurm_template = current_file.read()
+  
+      for key,val in slurm.items():
+        slurm_template = re.sub(r'@{0}@'.format(key), val, slurm_template)
+  
+      with open(slurm_output, 'w') as current_file:
+        current_file.write(slurm_template)
+  
+      if args['run']: return_code = subprocess.call("sbatch %s" % slurm_output, shell=True)  
