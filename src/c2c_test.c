@@ -57,7 +57,7 @@ int main(int argc, char **argv) {
   fft_int Nb[3] = { nx, ny, nz };
   fft_int is[3];
   int nthreads = 1;
-  int Ntry=10,itry;
+  int Ntry=100,itry;
 
   decompose(Nx, Nb, is, nthreads);
 
@@ -288,16 +288,16 @@ void timing(fft_int*Nx, double *fft_time, int Ntry){
   double g_fft_time[3];
   long long int zones=Nx[0]*Nx[1]*Nx[2];
   double zcs;
-  MPI_Reduce(&fft_time[0], &g_fft_time[0], 3, MPI_DOUBLE, MPI_MAX, 0,
+  MPI_Reduce(&fft_time[0], &g_fft_time[0], 3, MPI_DOUBLE, MPI_SUM, 0,
 			MPI_COMM_WORLD);
-  zcs=(double)(zones*Ntry)/(g_fft_time[1]+g_fft_time[2]);
+  zcs=(double)(zones*Ntry*nprocs)/(g_fft_time[1]+g_fft_time[2]);
   /* Compute some timings statistics */
   if(procid == 0){
     printf("Timing for Inplace FFT of size %i %i %i\n",Nx[0],Nx[1],Nx[2]);
     printf("with MPI configuration %i %i %i\n",np[0],np[1],np[2]);
     printf("Setup\t %g\n",g_fft_time[0]);
-    printf("FFT \t %g\n",g_fft_time[1]/Ntry);
-    printf("IFFT \t %g\n",g_fft_time[2]/Ntry);
+    printf("FFT \t %g\n",g_fft_time[1]/Ntry/nprocs);
+    printf("IFFT \t %g\n",g_fft_time[2]/Ntry/nprocs);
     printf("zcs\t %g\n",zcs);
   }
   return;

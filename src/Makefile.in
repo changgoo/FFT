@@ -1,7 +1,7 @@
 CC= mpicxx
 FFT = @FFT_SOLVER@
 MACHINE = tigress
-EXE = exe/c2c_$(FFT)
+EXE = ../exe/c2c_$(FFT)
 #OBJ = c2c_$(FFT).o
 OBJ = c2c_test.o
 ifeq ($(MACHINE),local)
