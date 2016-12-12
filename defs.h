@@ -1,8 +1,8 @@
 
-#define FFT_PLIMPTON
+//#define FFT_PLIMPTON
 //#define PFFT
 //#define FFTW
-//#define ACCFFT
+#define ACCFFT
 //#define OPENFFT
 
 #if defined (FFT_PLIMPTON)

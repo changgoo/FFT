@@ -112,7 +112,7 @@ void decompose(fft_int* Nx, fft_int* Nb, fft_int* is, int nthreads){
   /* Get parameters of data distribution */
   fft_int alloc_local,Ni[3],No[3],iis[3],ios[3];
   alloc_local = pfft_local_size_dft_3d(Nx, comm_cart_3d, PFFT_TRANSPOSED_NONE,
-      Ni, iis, Nbo, ios);
+      Ni, iis, No, ios);
   if( is[0] != iis[0] || is[1] != iis[1] || is[2] != iis[2] ){
     printf("Decomposition is inconsistent\n");
     printf("My decomposition %d %d %d\n",is[0],is[1],is[2]);
@@ -170,11 +170,13 @@ void decompose(fft_int* Nx, fft_int* Nb, fft_int* is, int nthreads){
   np[2] = Nx[2]/Nb[2];
 #endif
 
+/*
   printf("[mpi rank %d] block size  %3d %3d %3d\n", procid,
 		Nb[0],Nb[1],Nb[2]);
 
   printf("[mpi rank %d] istart      %3d %3d %3d\n", procid,
 		is[0],is[1],is[2]);
+*/
 
   return;
 }
