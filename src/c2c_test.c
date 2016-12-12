@@ -286,8 +286,11 @@ void fft_destroy(Complex *data){
 
 void timing(fft_int*Nx, double *fft_time, int Ntry){
   double g_fft_time[3];
+  long long int zones=Nx[0]*Nx[1]*Nx[2];
+  double zcs;
   MPI_Reduce(&fft_time[0], &g_fft_time[0], 3, MPI_DOUBLE, MPI_MAX, 0,
 			MPI_COMM_WORLD);
+  zcs=(double)(zones*Ntry)/(g_fft_time[1]+g_fft_time[2]);
   /* Compute some timings statistics */
   if(procid == 0){
     printf("Timing for Inplace FFT of size %i %i %i\n",Nx[0],Nx[1],Nx[2]);
@@ -295,11 +298,10 @@ void timing(fft_int*Nx, double *fft_time, int Ntry){
     printf("Setup\t %g\n",g_fft_time[0]);
     printf("FFT \t %g\n",g_fft_time[1]/Ntry);
     printf("IFFT \t %g\n",g_fft_time[2]/Ntry);
+    printf("zcs\t %g\n",zcs);
   }
   return;
 }
-
-
 
 
 void initialize(Complex*a, fft_int* Nx, fft_int* Nb, fft_int* is){
