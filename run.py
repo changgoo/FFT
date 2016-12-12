@@ -42,12 +42,16 @@ return_code = subprocess.call("./configure.py --fft=%s" % args['fft'], shell=Tru
 return_code = subprocess.call("make all", shell=True)  
 os.chdir('../exe')
 
-if args['server']=='perseus': nproc_node = 28
-elif args['server']=='tiger': nproc_node = 16
+if args['server']=='perseus': 
+  nproc_node = 28
+  Nx_set=([224,64,64],[224,128,64],[224,128,128])
+elif args['server']=='tiger': 
+  nproc_node = 16
+  Nx_set=([64,64,64],[128,64,64],[256,64,64])
 
 Nb=np.array([32,32,32])
 Nbunit=Nb.prod()
-for Nx0 in ([64,64,64],[128,64,64],[256,64,64]):
+for Nx0 in Nx_set:
   for i in range(6):
     Nx=np.array(Nx0)*2**i
     if args['decomp'] == 'block':
