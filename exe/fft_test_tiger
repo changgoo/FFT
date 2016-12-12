@@ -1,0 +1,27 @@
+#!/bin/bash
+#SBATCH -N @NNODE@
+#SBATCH -n @NPROC@
+#SBATCH -t 1:00:00
+#SBATCH --mail-type=begin
+#SBATCH --mail-type=end
+#SBATCH --mail-user=changgoo@princeton.edu
+#SBATCH --error=@FFT_SOLVER@-@DECOMP@-@NPROC@-@Nb1@.err
+#SBATCH --output=@FFT_SOLVER@-@DECOMP@-@NPROC@-@Nb1@.out
+#
+#
+
+FFT=@FFT_SOLVER@
+RUNDIR=/scratch/gpfs/changgoo/FFT/exe
+BIN=$RUNDIR/c2c_${FFT}
+
+cd $RUNDIR
+
+echo Time is `date`
+echo Directory is `pwd`
+echo Number of Tasks, Procs, Nodes are $SLURM_NTASKS $SLURM_NPROCS $SLURM_NNODES
+
+module load fftw
+module load openmpi
+module load intel
+
+srun $BIN @Nx1@ @Nx2@ @Nx3@ @Nb1@ @Nb2@ @Nb3@ @OUTNAME@

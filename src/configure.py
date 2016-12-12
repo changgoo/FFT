@@ -5,10 +5,19 @@ import argparse
 
 parser = argparse.ArgumentParser()
 
+parser.add_argument('--outname',
+    default='fft_out',
+    help='set output filename')
+
 parser.add_argument('--fft',
     default='fftw',
     choices=['fftw','fftp','pfft','accfft'],
     help='select fft solver')
+
+parser.add_argument('--server',
+    default='perseus',
+    choices=['perseus','tiger','pleiades'],
+    help='server name')
 
 # Parse command-line inputs
 args = vars(parser.parse_args())
@@ -16,6 +25,7 @@ args = vars(parser.parse_args())
 defs = {}
 makeoption = {}
 makeoption['FFT_SOLVER']=args['fft']
+makeoption['MACHINE']=args['server']
 if args['fft'] == 'fftw':
   defs['FFT_SOLVER'] = 'FFTW'
 elif args['fft'] == 'fftp':
@@ -24,6 +34,8 @@ elif args['fft'] == 'pfft':
   defs['FFT_SOLVER'] = 'PFFT'
 elif args['fft'] == 'accfft':
   defs['FFT_SOLVER'] = 'ACCFFT'
+
+defs['OUTFILE'] = args['outname']
 
 defsfile_input = 'defs.h.in'
 defsfile_output = 'defs.h'

@@ -1,0 +1,19 @@
+#PBS -q devel
+#PBS -l select=@NNODE@:ncpus=@NCPUS@:mpiprocs=@NCPUS@:model=bro
+#PBS -l walltime=1:00:00
+
+NPROCS=@NPROC@
+FFT=@FFT_SOLVER@
+BIN=./c2c_${FFT}
+OUTFILE=@FFT_SOLVER@-@DECOMP@-@NPROC@-@Nb1@.out
+
+module load comp-intel/2016.2.181
+module load mpi-sgi/mpt
+
+cd $PBS_O_WORKDIR
+
+echo Time is `date` > $OUTFILE
+echo Directory is `pwd` > $OUTFILE
+echo Number of Tasks, Procs, Nodes are $NPROCS $NCPUS @NNODE@ > $OUTFILE
+
+mpiexec -np $NPROCS $BIN @Nx1@ @Nx2@ @Nx3@ @Nb1@ @Nb2@ @Nb3@ @OUTNAME@ > $OUTFILE

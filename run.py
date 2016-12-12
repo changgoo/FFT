@@ -11,7 +11,7 @@ parser.add_argument('--run',
 
 parser.add_argument('--server',
     default='perseus',
-    choices=['perseus','tiger'],
+    choices=['perseus','tiger','pleiades'],
     help='server name')
 
 parser.add_argument('--decomp',
@@ -39,13 +39,13 @@ import os
 os.chdir('src/')
 return_code = subprocess.call("make clean", shell=True)  
 return_code = subprocess.call("./configure.py --fft=%s" % args['fft'], shell=True)  
-return_code = subprocess.call("make all", shell=True)  
+return_code = subprocess.call("make all MACHINE=%s" % args['server'], shell=True)  
 os.chdir('../exe')
 
-if args['server']=='perseus': 
+if args['server']=='perseus' or args['server']=='pleiades': 
   nproc_node = 28
   Nx_set=([224,64,64],[224,128,64],[224,128,128])
-elif args['server']=='tiger': 
+elif args['server']=='tiger':
   nproc_node = 16
   Nx_set=([64,64,64],[128,64,64],[256,64,64])
 
@@ -75,11 +75,12 @@ for Nx0 in Nx_set:
  
     nproc=Np.prod()
     nnode=(nproc-1)/nproc_node + 1
-    if nproc > 3000: break
+    if nproc > 10000: break
     print args['fft'],2**i,Nx,Nb,Np,nproc,nnode
  
     slurm={}
     slurm['NNODE']='%d' % nnode
+    slurm['NCPUS']='%d' % nproc_node
     slurm['NPROC']='%d' % nproc
     slurm['Nx1']='%d' % Nx[0]
     slurm['Nx2']='%d' % Nx[1]
@@ -90,8 +91,11 @@ for Nx0 in Nx_set:
     slurm['FFT_SOLVER']=args['fft']
     slurm['DECOMP']=args['decomp']
  
-    slurm_input='fft_test'
-    slurm_output='%s_test' % slurm['FFT_SOLVER']
+    slurm_input='fft_test_%s' % args['server']
+    slurm_output='%s-%s-%d' % (slurm['FFT_SOLVER'],args['decomp'],nproc)
+
+    outname='%s-%s-%d-%dx%dx%d.timing' % (slurm['FFT_SOLVER'],args['decomp'],nproc,Nb[0],Nb[1],Nb[2])
+    slurm['OUTNAME']=outname
     with open(slurm_input, 'r') as current_file:
       slurm_template = current_file.read()
  

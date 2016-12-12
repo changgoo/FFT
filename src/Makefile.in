@@ -1,43 +1,50 @@
-CC= mpicxx
+CXX= mpicxx
+CC= mpicc -std=c99
 FFT = @FFT_SOLVER@
-MACHINE = tigress
+MACHINE = @MACHINE@
 EXE = ../exe/c2c_$(FFT)
 #OBJ = c2c_$(FFT).o
 OBJ = c2c_test.o
+
+LIB_FFTW = -lfftw3_mpi -lfftw3_omp -lfftw3 -lmpi
 ifeq ($(MACHINE),local)
-  FFT_PATH =/u/cgkim/.local/
+  FFTW_INC =/u/cgkim/.local/include
+  FFTW_LIB =/u/cgkim/.local/lib
 else ifeq ($(MACHINE),tigress)
-  FFT_PATH =/tigress/changgoo/local
+  FFTW_INC =/tigress/changgoo/local/include
+  FFTW_LIB =/tigress/changgoo/local/lib
+else ifeq ($(MACHINE),pleiades)
+  FFTW_INC = /nasa/intel/Compiler/2016.2.181/mkl/include/fftw
+  FFTW_LIB =
+  LIB_FFTW = -mkl -lmpi
+  CC = icc
+else
+  FFTW_INC =/tigress/changgoo/local
+  FFTW_LIB =/tigress/changgoo/lib
 endif
-INC = -I$(FFT_PATH)/include
-LIB_PATH = -L$(FFT_PATH)/lib
+INC = -I$(FFTW_INC)
 
 ifeq ($(FFT),accfft)
   LIB_FFT = -laccfft
 else ifeq ($(FFT),openfft)
   LIB_FFT = -lopenfft
-  CC = mpicc
 else ifeq ($(FFT),pfft)
   LIB_FFT = -lpfft
-  CC = mpicc -std=c99
 else ifeq ($(FFT),fftp)
   INC += -I./fft_plimpton
   OBJ += $(FFT_OBJ)
   LIB_FFT = -L./fft_plimpton -lfftp
-  CC =mpicc
 else
   LIB_FFT = 
 endif
-LIB_FFTW = -lfftw3_mpi -lfftw3_omp -lfftw3 -lmpi
-LIB = $(LIB_PATH) $(LIB_FFT) $(LIB_FFTW)
+LIB = $(FFTW_LIB) $(LIB_FFT) $(LIB_FFTW)
 OPT = -O3 -fopenmp
 
 #-------------------  macro definitions  ---------------------------------------
 
+SRC = $(OBJ:.o=.c)
 ifeq ($(CC),mpicxx)
   SRC = $(OBJ:.o=.cpp)
-else ifeq ($(CC),mpicc)
-  SRC = $(OBJ:.o=.c)
 endif
 
 #--------------------  implicit rules  -----------------------------------------

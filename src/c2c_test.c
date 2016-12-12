@@ -4,8 +4,9 @@
 #include <mpi.h>
 #include "defs.h"
 
-static int nprocs, procid;
+static int nprocs, procid, itry;
 static int np[3];
+static char *outname;
 
 void decompose(fft_int* Nx, fft_int* Nb, fft_int* is, int nthreads);
 Complex *data_alloc(fft_int alloc_local);
@@ -38,18 +39,20 @@ int main(int argc, char **argv) {
     nx = 64;
     ny = 64;
     nz = 64;
-  } else if (argc == 3) {
+  } else if (argc == 4) {
     NX = atoi(argv[1]);
     nx = atoi(argv[2]);
     NY = NX; NZ = NX;
     ny = nx; nz = nx;
-  } else if (argc == 7) {
+    outname = argv[3];
+  } else if (argc == 8) {
     NX = atoi(argv[1]);
     NY = atoi(argv[2]);
     NZ = atoi(argv[3]);
     nx = atoi(argv[4]);
     ny = atoi(argv[5]);
     nz = atoi(argv[6]);
+    outname = argv[7];
   } else {
     printf("\n NUMBER of ARGUMENTS should be 2 or 6!! \n");
   }
@@ -57,7 +60,7 @@ int main(int argc, char **argv) {
   fft_int Nb[3] = { nx, ny, nz };
   fft_int is[3];
   int nthreads = 1;
-  int Ntry=100,itry;
+  int Ntry=100;
 
   decompose(Nx, Nb, is, nthreads);
 
@@ -177,6 +180,14 @@ void decompose(fft_int* Nx, fft_int* Nb, fft_int* is, int nthreads){
   printf("[mpi rank %d] istart      %3d %3d %3d\n", procid,
 		is[0],is[1],is[2]);
 */
+  if(procid==0){
+    FILE *pfile;
+    pfile = fopen(outname,"w");
+    fprintf(pfile,"# Timing dump for Nx = %d %d %d\t Nb = %d %d %d\n",
+                 Nx[0],Nx[1],Nx[2],Nb[0],Nb[1],Nb[2]);
+    fprintf(pfile,"# itry           forward-FFT     backward-FFT\n");
+    fclose(pfile);
+  }
 
   return;
 }
@@ -222,7 +233,7 @@ void fft_plan(Complex *data, fft_int* Nx, fft_int* Nb, fft_int* is, double *fft_
 
 void do_fft(Complex *data, double *fft_time, int nthreads){
   double f_time = 0, i_time = 0;
-  
+
   /* execute parallel forward FFT */
   f_time -= MPI_Wtime();
 #if defined (PFFT)
@@ -254,6 +265,16 @@ void do_fft(Complex *data, double *fft_time, int nthreads){
 #endif
   i_time+=MPI_Wtime();
 //  MPI_Barrier(MPI_COMM_WORLD);
+
+  if (procid==0){
+    FILE *pfile;
+    pfile=fopen(outname,"a"); 
+    fprintf(pfile,"%16d",itry);
+    fprintf(pfile,"%16.6e",f_time);
+    fprintf(pfile,"%16.6e\n",i_time);
+    fclose(pfile);
+  }
+
 
   fft_time[1]+=f_time;
   fft_time[2]+=i_time;

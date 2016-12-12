@@ -1,5 +1,5 @@
 
-#define PFFT
+#define FFT_PLIMPTON
 
 #if defined (FFT_PLIMPTON)
 #include <fft_3d.h>

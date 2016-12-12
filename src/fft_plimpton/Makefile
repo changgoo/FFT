@@ -17,7 +17,7 @@ CORE_OBJ = factor.o \
 
 CC = mpicc
 OBJ = $(CORE_OBJ)
-INC = 
+INC = -I/nasa/intel/Compiler/2016.2.181/mkl/include/fftw
 
 #-------------------  macro definitions  ---------------------------------------
 
