@@ -1,9 +1,5 @@
 
-//#define FFT_PLIMPTON
-//#define PFFT
-//#define FFTW
-#define ACCFFT
-//#define OPENFFT
+#define @FFT_SOLVER@
 
 #if defined (FFT_PLIMPTON)
 #include <fft_3d.h>
