@@ -15,9 +15,9 @@ CORE_OBJ = factor.o \
            remap_2d.o \
            remap_3d.o
 
-CC = mpicc
+CC = mpic++
 OBJ = $(CORE_OBJ)
-INC = -I/nasa/intel/Compiler/2016.2.181/mkl/include/fftw
+INC = -I/u/cgkim/.local/include
 
 #-------------------  macro definitions  ---------------------------------------
 

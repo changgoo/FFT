@@ -20,8 +20,8 @@
 struct remap_plan_3d {
   double *sendbuf;                  /* buffer for MPI sends */
   double *scratch;                  /* scratch buffer for MPI recvs */
-  void (*pack)();                   /* which pack function to use */
-  void (*unpack)();                 /* which unpack function to use */
+  void (*pack)(double *, double *, struct pack_plan_3d *);                   /* which pack function to use */
+  void (*unpack)(double *, double *, struct pack_plan_3d *);                 /* which unpack function to use */
   int *send_offset;                 /* extraction loc for each send */
   int *send_size;                   /* size of each send message */
   int *send_proc;                   /* proc to send each message to */
